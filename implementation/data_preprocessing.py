@@ -51,8 +51,8 @@ def extract_swell_dataset(overlap_pct, window_size_sec, data_save_path, save):
 
     print("SWELL")
     
-    swell_path = "set_your_path\\final_SWELL\\filtered_ecg\\"
-    swell_labels_path = "set_your_path\\final_SWELL\\label\\behavioral-labels.xlsx"
+    swell_path = "D:\\AIproj\\repo_ECG01\\final_SWELL\\filtered_ecg\\"
+    swell_labels_path = "D:\\AIproj\\repo_ECG01\\final_SWELL\\label\\behavioral-labels.xlsx"
     utils.makedirs(data_save_path)
     freq = 256
     window_size = window_size_sec * freq
@@ -116,7 +116,7 @@ def extract_swell_dataset(overlap_pct, window_size_sec, data_save_path, save):
     
     #adding csv names into labels
     swell_labels['filename'] = 'default'
-    
+
     for i in swell_file_names:
         start = i.find('_')
         end = i.rfind('c')
@@ -127,7 +127,7 @@ def extract_swell_dataset(overlap_pct, window_size_sec, data_save_path, save):
 
     
     print('dict unpacking...')
-    
+
     final_set = np.zeros((1, window_size+12), dtype = int)
     key_list = swell_dict.keys()
     for i in tqdm(key_list):
@@ -145,8 +145,8 @@ def extract_swell_dataset(overlap_pct, window_size_sec, data_save_path, save):
     final_set = final_set[1:]
         
     if save:
-        np.save(data_save_path / 'swell_dict.npy', final_set)          
-        
+        np.save(data_save_path / 'swell_dict.npy', final_set)
+
     print('swell files importing finished...')
     return final_set
 
@@ -156,8 +156,8 @@ def extract_dreamer_dataset(overlap_pct, window_size_sec, data_save_path, save):
 
     print("DREAMER")
 
-    dreamer_path = "set_your_path\\final_DREAMER\\filtered_ecg\\"
-    dreamer_labels_path = "set_your_path\\final_DREAMER\\labels\\"
+    dreamer_path = "D:\\AIproj\\repo_ECG01\\final_DREAMER\\filtered_ecg\\"
+    dreamer_labels_path = "D:\\AIproj\\repo_ECG01\\final_DREAMER\\labels\\"
     utils.makedirs(data_save_path)
     freq = 256
     window_size = window_size_sec * freq # sampling freq is always 256
@@ -264,14 +264,14 @@ def extract_dreamer_dataset(overlap_pct, window_size_sec, data_save_path, save):
     if save:
 
         np.save(data_save_path / 'dreamer_dict.npy', final_set)
-    
+
     print('dreamer files importing finished')
     return final_set
 
 def extract_amigos_dataset(overlap_pct, window_size_sec, data_save_path, save):
     print("AMIGOS")
-    amigos_path = "set_your_path\\final_AMIGOS\\filtered_ecg\\"
-    amigos_labels_path = "set_your_path\\final_AMIGOS\\labels\\amigos_labels.xlsx"
+    amigos_path = "D:\\AIproj\\repo_ECG01\\final_AMIGOS\\filtered_ecg\\"
+    amigos_labels_path = "D:\\AIproj\\repo_ECG01\\final_AMIGOS\\labels\\amigos_labels.xlsx"
     freq = 256
     utils.makedirs(data_save_path)
     window_size = window_size_sec * freq
@@ -342,7 +342,7 @@ def extract_amigos_dataset(overlap_pct, window_size_sec, data_save_path, save):
     final_set = final_set[1:]
         
     if save:
-        np.save(data_save_path / 'amigos_dict.npy', final_set)  
+        np.save(data_save_path / 'amigos_dict.npy', final_set)
 
     print('amigos files importing finished')
     return final_set   
@@ -352,14 +352,14 @@ def extract_wesad_dataset(overlap_pct, window_size_sec, data_save_path, save):
 
     print('WESAD')
     
-    wesad_path = "set_your_path\\final_WESAD\\filtered_ecg\\"
-    wesad_labels_path= "set_your_path\\final_WESAD\\labels\\"
+    wesad_path = "D:\\AIproj\\repo_ECG01\\final_WESAD\\filtered_ecg\\"
+    wesad_labels_path= "D:\\AIproj\\repo_ECG01\\final_WESAD\\labels\\"
     freq = 256
     utils.makedirs(data_save_path)
     window_size = window_size_sec * freq
     
     wesad_file_names, _ = import_filenames(wesad_path)
-    
+
     wesad_dict = {}
     wesad_labels = {}
      

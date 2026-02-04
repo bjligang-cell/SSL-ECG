@@ -4,9 +4,6 @@ Created on Thu Aug  8 23:57:24 2019
 
 @author: Pritam
 """
-##test
-##test2
-##test from github
 
 import os
 import tensorflow as tf
@@ -14,6 +11,8 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection import KFold
 from sklearn.utils import shuffle
+import sys
+from pathlib import Path
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
@@ -21,11 +20,32 @@ import model
 import utils
 import data_preprocessing
 
+## helper to get current file directory (robust: supports __file__ missing and PyInstaller)
+def get_current_file_dir(fallback_to_cwd=True):
+    """Return a pathlib.Path for the directory containing this file.
+    Falls back to cwd if __file__ is not defined (interactive shells) when fallback_to_cwd is True.
+    Also supports PyInstaller's _MEIPASS temporary folder.
+    """
+    # PyInstaller one-file bundle extracts to _MEIPASS
+    meipass = getattr(sys, '_MEIPASS', None)
+    if meipass:
+        return Path(meipass).resolve()
+    try:
+        return Path(__file__).resolve().parent
+    except NameError:
+        if fallback_to_cwd:
+            return Path.cwd()
+        raise
+
 ## mention paths
-data_folder     = os.path.join(os.path.dirname(dirname), 'data_folder')
-summaries       = os.path.join(os.path.dirname(dirname), 'summaries')
-output          = os.path.join(os.path.dirname(dirname), 'output')
-model_dir       = os.path.join(os.path.dirname(dirname), 'models')
+
+# project_root as a string (parent of implementation/)
+project_root    = str(get_current_file_dir().parent)
+# keep using os.path.join throughout the file (strings) for compatibility
+data_folder     = os.path.join(project_root, 'data_folder')
+summaries       = os.path.join(project_root, 'summaries')
+output          = os.path.join(project_root, 'output')
+model_dir       = os.path.join(project_root, 'models')
 
 ## transformation task params
 noise_param = 15 #noise_amount
@@ -50,7 +70,7 @@ lr_decay_steps = 10000
 lr_decay_rate = 0.9
 loss_coeff = [0.195, 0.195, 0.195, 0.0125, 0.0125, 0.195, 0.195]
 window_size = 2560
-extract_data = 0
+extract_data = 1
 current_time    = utils.current_time()
 
 """ for the first time run this """ 
@@ -62,9 +82,9 @@ if extract_data == 1:
 
 ## load datasets
 swell_data              = data_preprocessing.load_data(os.path.join(data_folder, 'swell_dict.npy'))
-dreamer_data            = data_preprocessing.load_data(os.path.join(data_folder, 'dreamer_dict.npy'))   
+dreamer_data            = data_preprocessing.load_data(os.path.join(data_folder, 'dreamer_dict.npy'))
 amigos_data             = data_preprocessing.load_data(os.path.join(data_folder, 'amigos_dict.npy'))
-wesad_data              = data_preprocessing.load_data(os.path.join(data_folder, 'wesad_dict.npy'))  
+wesad_data              = data_preprocessing.load_data(os.path.join(data_folder, 'wesad_dict.npy'))
 
 ## prepared as 10 fold cv
 swell_data              = data_preprocessing.swell_prepare_for_10fold(swell_data)  #person, y_input_stress, y_arousal, y_valence, 
@@ -183,8 +203,8 @@ for k in range(total_fold):
             train_pred_task = np.zeros((len(transform_task), actual_batch_size), dtype  = np.float32) -1
             train_true_task = np.zeros((len(transform_task), actual_batch_size), dtype  = np.float32) -1
             tr_output_loss = 0
-    
-           
+
+
             tr_total_gen_op = utils.make_total_batch(data = train_ECG, length = training_length, batchsize = batchsize, 
                                                noise_amount=noise_param, 
                                                scaling_factor=scale_param, 
@@ -192,7 +212,7 @@ for k in range(total_fold):
                                                time_warping_pieces=tw_piece_param, 
                                                time_warping_stretch_factor= twsf_param, 
                                                time_warping_squeeze_factor= 1/twsf_param)
-    
+
             for training_batch, training_labels, tr_counter, tr_steps in tr_total_gen_op:
                 
                 ## run the model here 
@@ -207,8 +227,8 @@ for k in range(total_fold):
                 if tr_counter % log_step == 0: # 
                     summary_writer.add_summary(fetched[-1], tr_counter)
                     summary_writer.flush()
-    
-                tr_loss_task = utils.fetch_all_loss(fetched[0], tr_loss_task) 
+
+                tr_loss_task = utils.fetch_all_loss(fetched[0], tr_loss_task)
                 tr_output_loss += fetched[1]
                 
                 train_pred_task = utils.fetch_pred_labels(fetched[2], train_pred_task)
@@ -218,13 +238,13 @@ for k in range(total_fold):
             tr_epoch_loss = np.true_divide(tr_loss_task, tr_steps)
             train_loss_dict.update({epoch_counter: tr_epoch_loss})
             tr_output_loss = np.true_divide(tr_output_loss, tr_steps)
-            
+
             ## performance matrix after each epoch
             tr_epoch_accuracy, tr_epoch_f1_score = utils.get_results_ssl(train_true_task, np.asarray(train_pred_task, int))
             tr_ssl_result = utils.write_result(tr_epoch_accuracy, tr_epoch_f1_score, epoch_counter, tr_ssl_result)
             utils.write_summary(loss = tr_epoch_loss, total_loss = tr_output_loss, f1_score = tr_epoch_f1_score, epoch_counter = epoch_counter, isTraining = True, summary_writer = summary_writer)
             utils.write_result_csv(k, epoch_counter, os.path.join(output, "STR_result", "tr_str_f1_Score.csv"), tr_epoch_f1_score)
-    
+
             model_path = os.path.join(model_dir , "epoch_" + str(epoch_counter))
             utils.makedirs(model_path)
             save_path = saver.save(sess, os.path.join(model_path, "SSL_model.ckpt"))
@@ -245,24 +265,24 @@ for k in range(total_fold):
                                                      time_warping_pieces=tw_piece_param, 
                                                      time_warping_stretch_factor= twsf_param, 
                                                      time_warping_squeeze_factor= 1/twsf_param)
-    
+
             for testing_batch, testing_labels, te_counter, te_steps in te_total_gen_op:
                 
                 ## run the model here 
                 fetches = [all_loss, output_loss, y_pred]
                     
                 fetched = sess.run(fetches, {input_tensor: testing_batch, y: testing_labels, drop_out: 0.0, isTrain: False})
-    
+
                 te_loss_task = utils.fetch_all_loss(fetched[0], te_loss_task)
                 te_output_loss += fetched[1]
                 test_pred_task = utils.fetch_pred_labels(fetched[2], test_pred_task)
                 test_true_task = utils.fetch_true_labels(testing_labels, test_true_task)
-    
+
             ## loss after epoch
             te_epoch_loss = np.true_divide(te_loss_task, te_steps)
             test_loss_dict.update({epoch_counter: te_epoch_loss})
             te_output_loss = np.true_divide(te_output_loss, te_steps)
-    
+
             ## performance matrix after each epoch
             te_epoch_accuracy, te_epoch_f1_score = utils.get_results_ssl(test_true_task, test_pred_task)            
             te_ssl_result = utils.write_result(te_epoch_accuracy, te_epoch_f1_score, epoch_counter, te_ssl_result)    
