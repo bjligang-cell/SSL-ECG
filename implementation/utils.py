@@ -51,8 +51,18 @@ def make_batch(signal_batch, noise_amount, scaling_factor, permutation_pieces, t
     for i in range(len(signal_batch)):
         
         signal              = signal_batch[i]
-        signal              = np.trim_zeros(signal, 'b')
-        sampling_freq       = len(signal)//10
+        # signal              = np.trim_zeros(signal, 'b')  # 注释掉：ECG数据已经是固定长度2560
+        sampling_freq       = 256  # 固定采样率256 Hz
+        target_length       = 2560  # 目标长度
+        
+        # 确保原始信号也是正确长度
+        if len(signal) != target_length:
+            if len(signal) > target_length:
+                signal = signal[:target_length]
+            else:
+                pad_length = target_length - len(signal)
+                signal = np.pad(signal, (0, pad_length), 'constant', constant_values=0)
+        
         noised_signal       = stt.add_noise_with_SNR(signal, noise_amount = noise_amount) #round(np.random.uniform(0.005,0.05),2)) # 0.005 - 0.05
         scaled_signal       = stt.scaled(signal, factor = scaling_factor) #round(np.random.uniform(0.2,2),2)) # 0.2 - 2
         negated_signal      = stt.negate(signal)
@@ -60,19 +70,35 @@ def make_batch(signal_batch, noise_amount, scaling_factor, permutation_pieces, t
         permuted_signal     = stt.permute(signal, pieces = permutation_pieces) # 2-20
         time_warped_signal  = stt.time_warp(signal, sampling_freq, pieces = time_warping_pieces, stretch_factor = time_warping_stretch_factor, squeeze_factor = time_warping_squeeze_factor)
         
-        ## making signals of same size.. 
-        tw_start_index      = np.int(np.random.randint(0, (len(time_warped_signal)-len(signal))))
-        tw_stop_index       = np.int(tw_start_index + len(signal))
-        time_warped_signal  = time_warped_signal[tw_start_index:tw_stop_index]
-
+        ## making all signals of same size as original signal (2560)
+        def adjust_length(sig, target_len):
+            """调整信号长度到目标长度"""
+            if len(sig) > target_len:
+                # 信号过长，随机裁剪
+                start_idx = np.random.randint(0, max(1, len(sig) - target_len))
+                return sig[start_idx:start_idx + target_len]
+            elif len(sig) < target_len:
+                # 信号过短，零填充
+                pad_length = target_len - len(sig)
+                return np.pad(sig, (0, pad_length), 'constant', constant_values=0)
+            else:
+                return sig
         
-        signal                  = signal.reshape(len(signal), 1)
-        noised_signal           = noised_signal.reshape(len(noised_signal), 1)
-        scaled_signal           = scaled_signal.reshape(len(scaled_signal), 1)
-        negated_signal          = negated_signal.reshape(len(negated_signal), 1)
-        flipped_signal          = flipped_signal.reshape(len(flipped_signal), 1)
-        permuted_signal         = permuted_signal.reshape(len(permuted_signal), 1)
-        time_warped_signal      = time_warped_signal.reshape(len(time_warped_signal), 1)
+        # 调整所有变换信号的长度
+        noised_signal = adjust_length(noised_signal, target_length)
+        scaled_signal = adjust_length(scaled_signal, target_length)
+        negated_signal = adjust_length(negated_signal, target_length)
+        flipped_signal = adjust_length(flipped_signal, target_length)
+        permuted_signal = adjust_length(permuted_signal, target_length)
+        time_warped_signal = adjust_length(time_warped_signal, target_length)
+        
+        signal                  = signal.reshape(target_length, 1)
+        noised_signal           = noised_signal.reshape(target_length, 1)
+        scaled_signal           = scaled_signal.reshape(target_length, 1)
+        negated_signal          = negated_signal.reshape(target_length, 1)
+        flipped_signal          = flipped_signal.reshape(target_length, 1)
+        permuted_signal         = permuted_signal.reshape(target_length, 1)
+        time_warped_signal      = time_warped_signal.reshape(target_length, 1)
                     
         
         batch = [signal, noised_signal, scaled_signal, negated_signal, flipped_signal, permuted_signal, time_warped_signal]
@@ -262,6 +288,13 @@ def extract_feature(x_original, featureset_size, batch_super, input_tensor, isTr
     for j in range(steps):
         signal_batch = x_original[np.mod(np.arange(j*batch_super,(j+1)*batch_super), length)]
         signal_batch = signal_batch.reshape(np.shape(signal_batch)[0], np.shape(signal_batch)[1], 1)
+        # Pad signals to expected length (2560) if needed
+        expected_length = 2560
+        if signal_batch.shape[1] < expected_length:
+            padding = np.zeros((signal_batch.shape[0], expected_length - signal_batch.shape[1], 1))
+            signal_batch = np.concatenate([signal_batch, padding], axis=1)
+        elif signal_batch.shape[1] > expected_length:
+            signal_batch = signal_batch[:, :expected_length, :]
         fetched = sess.run(extract_layer, {input_tensor: signal_batch, isTrain: False, drop_out: 0.0})
         feature_set = np.vstack((feature_set, fetched))
          

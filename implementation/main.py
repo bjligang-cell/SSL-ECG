@@ -61,7 +61,7 @@ single_batch_size = len(transform_task)
 batchsize = 128  
 actual_batch_size =  batchsize * single_batch_size
 log_step = 100
-epoch = 100
+epoch = 70  # Validation completed at epoch 70
 initial_learning_rate = 0.001
 drop_rate = 0.6
 regularizer = 1
@@ -70,33 +70,33 @@ lr_decay_steps = 10000
 lr_decay_rate = 0.9
 loss_coeff = [0.195, 0.195, 0.195, 0.0125, 0.0125, 0.195, 0.195]
 window_size = 2560
-extract_data = 1
+extract_data = 0
 current_time    = utils.current_time()
 
 """ for the first time run this """ 
 if extract_data == 1:
-    _       = data_preprocessing.extract_swell_dataset(overlap_pct= 0, window_size_sec= 10, data_save_path= data_folder, save= 1)
+#    _       = data_preprocessing.extract_swell_dataset(overlap_pct= 0, window_size_sec= 10, data_save_path= data_folder, save= 1)
     _       = data_preprocessing.extract_dreamer_dataset(overlap_pct= 0, window_size_sec= 10, data_save_path= data_folder, save= 1)
-    _       = data_preprocessing.extract_amigos_dataset(overlap_pct= 0, window_size_sec= 10, data_save_path= data_folder, save=1)
-    _       = data_preprocessing.extract_wesad_dataset(overlap_pct=0, window_size_sec=10, data_save_path= data_folder, save=1)
+#    _       = data_preprocessing.extract_amigos_dataset(overlap_pct= 0, window_size_sec= 10, data_save_path= data_folder, save=1)
+#    _       = data_preprocessing.extract_wesad_dataset(overlap_pct=0, window_size_sec=10, data_save_path= data_folder, save=1)
 
 ## load datasets
-swell_data              = data_preprocessing.load_data(os.path.join(data_folder, 'swell_dict.npy'))
+swell_data              = None  # data_preprocessing.load_data(os.path.join(data_folder, 'swell_dict.npy'))
 dreamer_data            = data_preprocessing.load_data(os.path.join(data_folder, 'dreamer_dict.npy'))
-amigos_data             = data_preprocessing.load_data(os.path.join(data_folder, 'amigos_dict.npy'))
-wesad_data              = data_preprocessing.load_data(os.path.join(data_folder, 'wesad_dict.npy'))
+amigos_data             = None  # data_preprocessing.load_data(os.path.join(data_folder, 'amigos_dict.npy'))
+wesad_data              = None  # data_preprocessing.load_data(os.path.join(data_folder, 'wesad_dict.npy'))
 
 ## prepared as 10 fold cv
-swell_data              = data_preprocessing.swell_prepare_for_10fold(swell_data)  #person, y_input_stress, y_arousal, y_valence, 
-wesad_data              = data_preprocessing.wesad_prepare_for_10fold(wesad_data) # person, y_stress
-amigos_data             = data_preprocessing.amigos_prepare_for_10fold(amigos_data) # person, y_arousal, y_valence, y_dominance
+#swell_data              = data_preprocessing.swell_prepare_for_10fold(swell_data)  #person, y_input_stress, y_arousal, y_valence,
+#wesad_data              = data_preprocessing.wesad_prepare_for_10fold(wesad_data) # person, y_stress
+#amigos_data             = data_preprocessing.amigos_prepare_for_10fold(amigos_data) # person, y_arousal, y_valence, y_dominance
 dreamer_data            = data_preprocessing.dreamer_prepare_for_10fold(dreamer_data) # person, y_arousal, y_valence, y_dominance
 
-total_fold = 10
+total_fold = 1  # Quick validation: reduced from 10
 kf = KFold(n_splits=total_fold, shuffle=True, random_state=True)
-swell_train_index, swell_test_index     = utils.get_train_test_index(swell_data, kf)
-wesad_train_index, wesad_test_index     = utils.get_train_test_index(wesad_data, kf)
-amigos_train_index, amigos_test_index   = utils.get_train_test_index(amigos_data, kf)
+#swell_train_index, swell_test_index     = utils.get_train_test_index(swell_data, kf)
+#wesad_train_index, wesad_test_index     = utils.get_train_test_index(wesad_data, kf)
+#amigos_train_index, amigos_test_index   = utils.get_train_test_index(amigos_data, kf)
 dreamer_train_index, dreamer_test_index = utils.get_train_test_index(dreamer_data, kf)
 
 """ self supervised task start """
@@ -162,32 +162,26 @@ for k in range(total_fold):
     er_logs         = os.path.join(summaries, "ER", current_time)
     utils.makedirs(str_logs)
     
-    ## combine all ECG data
-    train_ECG   = np.vstack((swell_data[swell_train_index[k], 4:], amigos_data[amigos_train_index[k], 3:], dreamer_data[dreamer_train_index[k], 3:], wesad_data[wesad_train_index[k], 2:])) 
-    test_ECG    = np.vstack((swell_data[swell_test_index[k], 4:],  amigos_data[amigos_test_index[k], 3:],  dreamer_data[dreamer_test_index[k], 3:],  wesad_data[wesad_test_index[k], 2:])) 
+    ## Use only DREAMER data (other datasets are commented out)
+    train_ECG   = dreamer_data[dreamer_train_index[k], 4:]
+    test_ECG    = dreamer_data[dreamer_test_index[k], 4:]
     train_ECG   = shuffle(train_ECG)
     
-    ## fetch emotion recognition labels
-    train_swell_input_stress, test_swell_input_stress = utils.one_hot_encoding(arr = swell_data[:, 1], tr_index = swell_train_index[k], te_index = swell_test_index[k])
-    train_swell_arousal, test_swell_arousal           = utils.one_hot_encoding(arr = swell_data[:, 2], tr_index = swell_train_index[k], te_index = swell_test_index[k])
-    train_swell_valence, test_swell_valence           = utils.one_hot_encoding(arr = swell_data[:, 3], tr_index = swell_train_index[k], te_index = swell_test_index[k])
+    ## fetch emotion recognition labels (only for DREAMER)
     train_dreamer_arousal, test_dreamer_arousal       = utils.one_hot_encoding(arr = dreamer_data[:, 1], tr_index = dreamer_train_index[k], te_index = dreamer_test_index[k])
     train_dreamer_valence, test_dreamer_valence       = utils.one_hot_encoding(arr = dreamer_data[:, 2], tr_index = dreamer_train_index[k], te_index = dreamer_test_index[k])
-    train_amigos_arousal, test_amigos_arousal         = utils.one_hot_encoding(arr = amigos_data[:, 1],  tr_index = amigos_train_index[k], te_index = amigos_test_index[k])
-    train_amigos_valence, test_amigos_valence         = utils.one_hot_encoding(arr = amigos_data[:, 2],  tr_index = amigos_train_index[k], te_index = amigos_test_index[k])
-    train_wesad_stress, test_wesad_stress             = utils.one_hot_encoding(arr = wesad_data[:, 1],  tr_index = wesad_train_index[k], te_index = wesad_test_index[k])
-    
+
     training_length = train_ECG.shape[0]
     testing_length  = test_ECG.shape[0]
-    
+
     print('Initializing all parameters.')
     tf.reset_default_graph()
-    with tf.Session(graph=graph) as sess:   
+    with tf.Session(graph=graph) as sess:
         summary_writer = tf.compat.v1.summary.FileWriter(str_logs, sess.graph)
     
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
-        
+
         print('self supervised training started')
         
         train_loss_dict = {}
@@ -295,72 +289,77 @@ for k in range(total_fold):
                 supervised task of self supervised learning
                 """
                 """  swell """
-               
+
+                ## SWELL dataset not loaded - commented out
+                """
                 ## training - testing ECG
                 x_tr = swell_data[swell_train_index[k], 4:]
                 x_te = swell_data[swell_test_index[k], 4:]
-                
+
                 ## features extracted from conv layers
                 x_tr_feature = utils.extract_feature(x_original = x_tr, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
                 x_te_feature = utils.extract_feature(x_original = x_te, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
-                
+
                 ## supervised emotion recognition
-                model.supervised_model_swell(x_tr_feature = x_tr_feature, y_tr = train_swell_input_stress, x_te_feature = x_te_feature, y_te = test_swell_input_stress, identifier = 'swell_input_stress', kfold = flag, result = output, summaries = er_logs, current_time = current_time)        
-                model.supervised_model_swell(x_tr_feature = x_tr_feature, y_tr = train_swell_arousal, x_te_feature = x_te_feature, y_te = test_swell_arousal, identifier = 'swell_arousal', kfold = flag, result = output, summaries = er_logs, current_time = current_time)  
-                model.supervised_model_swell(x_tr_feature = x_tr_feature, y_tr = train_swell_valence, x_te_feature = x_te_feature, y_te = test_swell_valence, identifier = 'swell_valence', kfold = flag, result = output, summaries = er_logs, current_time = current_time)  
-        
-                
+                model.supervised_model_swell(x_tr_feature = x_tr_feature, y_tr = train_swell_input_stress, x_te_feature = x_te_feature, y_te = test_swell_input_stress, identifier = 'swell_input_stress', kfold = flag, result = output, summaries = er_logs, current_time = current_time)
+                model.supervised_model_swell(x_tr_feature = x_tr_feature, y_tr = train_swell_arousal, x_te_feature = x_te_feature, y_te = test_swell_arousal, identifier = 'swell_arousal', kfold = flag, result = output, summaries = er_logs, current_time = current_time)
+                model.supervised_model_swell(x_tr_feature = x_tr_feature, y_tr = train_swell_valence, x_te_feature = x_te_feature, y_te = test_swell_valence, identifier = 'swell_valence', kfold = flag, result = output, summaries = er_logs, current_time = current_time)
+                """
+
+
                 """
                 supervised task of self supervised learning
                 """
-                """  wesad """  
+                """  wesad """
 
-                ## training - testing ECG                
+                ## WESAD dataset not loaded - commented out
+                """
+                ## training - testing ECG
                 x_tr = wesad_data[wesad_train_index[k], 2:]
                 x_te = wesad_data[wesad_test_index[k], 2:]
-                
+
                 ## features extracted from conv layers
                 x_tr_feature = utils.extract_feature(x_original = x_tr, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
                 x_te_feature = utils.extract_feature(x_original = x_te, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
-                
+
                 ## supervised emotion recognition
-                model.supervised_model_wesad(x_tr_feature = x_tr_feature, y_tr = train_wesad_stress, x_te_feature = x_te_feature, y_te = test_wesad_stress, identifier = 'wesad_affect', kfold = flag, result = output, summaries = er_logs, current_time = current_time)  
-#        
-                
+                model.supervised_model_wesad(x_tr_feature = x_tr_feature, y_tr = train_wesad_stress, x_te_feature = x_te_feature, y_te = test_wesad_stress, identifier = 'wesad_affect', kfold = flag, result = output, summaries = er_logs, current_time = current_time)
+                """
+#
+
                 """
                 supervised task of self supervised learning
                 """
                 """  dreamer """  
-                
-                ## training - testing ECG                
-                x_tr = dreamer_data[dreamer_train_index[k], 3:]
-                x_te = dreamer_data[dreamer_test_index[k], 3:]
-                    
-                ## features extracted from conv layers
-                x_tr_feature = utils.extract_feature(x_original = x_tr, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
-                x_te_feature = utils.extract_feature(x_original = x_te, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
-                
-                ## supervised emotion recognition
-                model.supervised_model_dreamer(x_tr_feature = x_tr_feature, y_tr = train_dreamer_arousal, x_te_feature = x_te_feature, y_te = test_dreamer_arousal, identifier = 'dreamer_arousal', kfold = flag, result = output, summaries = er_logs, current_time = current_time)  
-                model.supervised_model_dreamer(x_tr_feature = x_tr_feature, y_tr = train_dreamer_valence, x_te_feature = x_te_feature, y_te = test_dreamer_valence, identifier = 'dreamer_valence', kfold = flag, result = output, summaries = er_logs, current_time = current_time)  
-                
-        
+                if hasattr(dreamer_data, 'size') and dreamer_data.size:
+                    ## training - testing ECG
+                    x_tr = dreamer_data[dreamer_train_index[k], 4:]
+                    x_te = dreamer_data[dreamer_test_index[k], 4:]
+
+                    ## features extracted from conv layers
+                    x_tr_feature = utils.extract_feature(x_original = x_tr, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
+                    x_te_feature = utils.extract_feature(x_original = x_te, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
+
+                    ## supervised emotion recognition
+                    model.supervised_model_dreamer(x_tr_feature = x_tr_feature, y_tr = train_dreamer_arousal, x_te_feature = x_te_feature, y_te = test_dreamer_arousal, identifier = 'dreamer_arousal', kfold = flag, result = output, summaries = er_logs, current_time = current_time)
+                    model.supervised_model_dreamer(x_tr_feature = x_tr_feature, y_tr = train_dreamer_valence, x_te_feature = x_te_feature, y_te = test_dreamer_valence, identifier = 'dreamer_valence', kfold = flag, result = output, summaries = er_logs, current_time = current_time)
+
                 """
                 supervised task of self supervised learning
                 """
                 """  amigos """  
+                if hasattr(amigos_data, 'size') and amigos_data.size:
+                    ## training - testing ECG
+                    x_tr = amigos_data[amigos_train_index[k], 3:]
+                    x_te = amigos_data[amigos_test_index[k], 3:]
 
-                ## training - testing ECG                
-                x_tr = amigos_data[amigos_train_index[k], 3:]
-                x_te = amigos_data[amigos_test_index[k], 3:]
-                    
-                ## features extracted from conv layers
-                x_tr_feature = utils.extract_feature(x_original = x_tr, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
-                x_te_feature = utils.extract_feature(x_original = x_te, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
-                
-                ## supervised emotion recognition
-                model.supervised_model_amigos(x_tr_feature = x_tr_feature, y_tr = train_amigos_arousal, x_te_feature = x_te_feature, y_te = test_amigos_arousal, identifier = 'amigos_arousal', kfold = flag, result = output, summaries = er_logs, current_time = current_time)  
-                model.supervised_model_amigos(x_tr_feature = x_tr_feature, y_tr = train_amigos_valence, x_te_feature = x_te_feature, y_te = test_amigos_valence, identifier = 'amigos_valence', kfold = flag, result = output, summaries = er_logs, current_time = current_time)  
+                    ## features extracted from conv layers
+                    x_tr_feature = utils.extract_feature(x_original = x_tr, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
+                    x_te_feature = utils.extract_feature(x_original = x_te, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
+
+                    ## supervised emotion recognition
+                    model.supervised_model_amigos(x_tr_feature = x_tr_feature, y_tr = train_amigos_arousal, x_te_feature = x_te_feature, y_te = test_amigos_arousal, identifier = 'amigos_arousal', kfold = flag, result = output, summaries = er_logs, current_time = current_time)
+                    model.supervised_model_amigos(x_tr_feature = x_tr_feature, y_tr = train_amigos_valence, x_te_feature = x_te_feature, y_te = test_amigos_valence, identifier = 'amigos_valence', kfold = flag, result = output, summaries = er_logs, current_time = current_time)
 
         ## save str loss, acc and f1 score    
         np.save(tr_ssl_loss_filename, train_loss_dict)
@@ -368,5 +367,4 @@ for k in range(total_fold):
     
         np.save(tr_ssl_result_filename, tr_ssl_result)
         np.save(te_ssl_result_filename, te_ssl_result)
-
 
