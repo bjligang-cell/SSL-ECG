@@ -145,7 +145,7 @@ def extract_swell_dataset(overlap_pct, window_size_sec, data_save_path, save):
     final_set = final_set[1:]
         
     if save:
-        np.save(data_save_path / 'swell_dict.npy', final_set)
+        np.save(os.path.join(data_save_path, 'swell_dict.npy'), final_set)
 
     print('swell files importing finished...')
     return final_set
@@ -156,8 +156,10 @@ def extract_dreamer_dataset(overlap_pct, window_size_sec, data_save_path, save):
 
     print("DREAMER")
 
-    dreamer_path = "D:\\AIproj\\repo_ECG01\\final_DREAMER\\filtered_ecg\\"
-    dreamer_labels_path = "D:\\AIproj\\repo_ECG01\\final_DREAMER\\labels\\"
+    # Use relative paths from project root
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    dreamer_path = os.path.join(project_root, "final_DREAMER", "filtered_ecg") + os.sep
+    dreamer_labels_path = os.path.join(project_root, "final_DREAMER", "labels") + os.sep
     utils.makedirs(data_save_path)
     freq = 256
     window_size = window_size_sec * freq # sampling freq is always 256
@@ -221,8 +223,8 @@ def extract_dreamer_dataset(overlap_pct, window_size_sec, data_save_path, save):
     label_df = pd.DataFrame(columns = ['filename', 'Arousal', 'Dominance', 'Valence'])
     counter = 0
     for i in keys:
-        index = i.find('_')
-        key = i[2:index] + '.' + i[index+6: -4]
+        parts = i[:-4].split('_')  # Remove .txt and split
+        key = parts[0][1:] + '.' + parts[1].replace('clips', '')  # Remove 's' and 'clips' prefixes
         label_df.loc[counter, 'filename'] = key
         label_df.loc[counter, 'Arousal'] = dreamer_labels_dict[i].values[0]
         label_df.loc[counter, 'Dominance'] = dreamer_labels_dict[i].values[1]
@@ -235,9 +237,9 @@ def extract_dreamer_dataset(overlap_pct, window_size_sec, data_save_path, save):
     final_set = np.zeros((1, window_size+2), dtype = int)
     for i in tqdm(dreamer_dict.keys()):
         values = dreamer_dict[i]
-        index = i.find('_')
-        person_id = np.int(i[2:index])
-        clip = np.int(i[index+6: -4])
+        parts = i[:-4].split('_')  # Remove .txt and split
+        person_id = np.int(parts[0][1:])  # Remove 's' prefix
+        clip = np.int(parts[1].replace('clips', ''))  # Remove 'clips' prefix
         key = np.repeat(np.array([[person_id, clip]]), len(values), axis=0)
         signal_set = np.hstack((key, values))
     #    final_training_set = np.append(final_training_set, training_set, axis = 0)
@@ -263,7 +265,7 @@ def extract_dreamer_dataset(overlap_pct, window_size_sec, data_save_path, save):
 
     if save:
 
-        np.save(data_save_path / 'dreamer_dict.npy', final_set)
+        np.save(os.path.join(data_save_path, 'dreamer_dict.npy'), final_set)
 
     print('dreamer files importing finished')
     return final_set
@@ -342,7 +344,7 @@ def extract_amigos_dataset(overlap_pct, window_size_sec, data_save_path, save):
     final_set = final_set[1:]
         
     if save:
-        np.save(data_save_path / 'amigos_dict.npy', final_set)
+        np.save(os.path.join(data_save_path, 'amigos_dict.npy'), final_set)
 
     print('amigos files importing finished')
     return final_set   
@@ -400,7 +402,7 @@ def extract_wesad_dataset(overlap_pct, window_size_sec, data_save_path, save):
 
     
     if save:
-        np.save(data_save_path / 'wesad_dict.npy', final_set)
+        np.save(os.path.join(data_save_path, 'wesad_dict.npy'), final_set)
 
     print('wesad files importing finished')
     return final_set

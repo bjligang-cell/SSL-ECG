@@ -12,14 +12,14 @@ import numpy as np
 from tqdm import tqdm
 
 ## specify the path where model is saved
-model_path = os.path.abspath("enter_the_path_model_saved\\saved_model\\") 
+model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "saved_model")
 ## load a sample data to extract features
 x_ecg = np.load('sample_ecg.npy', allow_pickle=True)
 ## specify the batch size
 batch_size = 4
 
 with tf.compat.v1.Session() as sess:
-    saver       = tf.compat.v1.train.import_meta_graph(model_path + "\\SSL_model.ckpt.meta")
+    saver       = tf.compat.v1.train.import_meta_graph(os.path.join(model_path, "SSL_model.ckpt.meta"))
     new_saver   = saver.restore(sess, tf.train.latest_checkpoint(model_path))
 
     graph       = tf.compat.v1.get_default_graph()

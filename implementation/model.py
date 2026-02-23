@@ -23,7 +23,7 @@ def conv_block(input_tensor,  filter_size, kernel_size, stride, batch_norm, drop
     conv     = tf.nn.leaky_relu(conv, name = name)
     if dropout:
         conv    = tf.layers.dropout(inputs=conv, rate=dropout_rate, training=isTraining, name = name)
-    
+
     return conv
 
 def dense_block(input_tensor, hidden_nodes, drop_rate, isTraining, name):
@@ -32,7 +32,7 @@ def dense_block(input_tensor, hidden_nodes, drop_rate, isTraining, name):
     dense       = tf.layers.dense  (inputs=input_tensor, units=hidden_nodes, reuse=reuse,  name= name )
     dense       = tf.nn.leaky_relu(dense)
     dense       = tf.layers.dropout(inputs=dense, rate=drop_rate, training=isTraining, name= name)
-    
+
     return dense
 
 
@@ -45,27 +45,27 @@ def self_supervised_model(input_tensor, isTraining, drop_rate, hidden_nodes = 12
 
     ## conv block 1
     conv1     = main_branch 
-    conv1     = tf.layers.max_pooling1d(conv1, pool_size = conv1.get_shape()[1].value, strides=stride_mp, padding='valid', name = 'GAP1')    
+    conv1     = tf.layers.max_pooling1d(conv1, pool_size = conv1.get_shape()[1].value, strides=stride_mp, padding='valid', name = 'GAP1')
     conv1     = tf.layers.flatten(conv1, name = 'flat_layer1')
 
-    main_branch     = tf.layers.max_pooling1d(main_branch, pool_size = 8, strides=2, padding='valid', name = 'mp1') 
+    main_branch     = tf.layers.max_pooling1d(main_branch, pool_size = 8, strides=2, padding='valid', name = 'mp1')
     main_branch = conv_block(main_branch,  filter_size = 64, kernel_size = 16, stride = 1, batch_norm = False, dropout = False, dropout_rate = drop_rate * 0.5, isTraining = isTraining, name = 'conv_layer_3')
     main_branch = conv_block(main_branch,  filter_size = 64, kernel_size = 16, stride = 1, batch_norm = False, dropout = False, dropout_rate = drop_rate * 0.5, isTraining = isTraining, name = 'conv_layer_4')
 
     ## conv block 2
     conv2     = main_branch 
-    conv2     = tf.layers.max_pooling1d(conv2, pool_size = conv2.get_shape()[1].value, strides=stride_mp, padding='valid', name = 'GAP2') 
+    conv2     = tf.layers.max_pooling1d(conv2, pool_size = conv2.get_shape()[1].value, strides=stride_mp, padding='valid', name = 'GAP2')
     conv2     = tf.layers.flatten(conv2, name = 'flat_layer2')
 
-    main_branch     = tf.layers.max_pooling1d(main_branch, pool_size = 8, strides=2, padding='valid', name = 'mp2')        
+    main_branch     = tf.layers.max_pooling1d(main_branch, pool_size = 8, strides=2, padding='valid', name = 'mp2')
     main_branch = conv_block(main_branch,  filter_size = 128, kernel_size = 8, stride = 1, batch_norm = False, dropout = False, dropout_rate = drop_rate * 0.5, isTraining = isTraining, name = 'conv_layer_5')
     main_branch = conv_block(main_branch,  filter_size = 128, kernel_size = 8, stride = 1, batch_norm = False, dropout = False, dropout_rate = drop_rate * 0.5, isTraining = isTraining, name = 'conv_layer_6')
 
     ## conv block 3
     conv3     = main_branch 
-    conv3     = tf.layers.max_pooling1d(conv3, pool_size = conv3.get_shape()[1].value, strides=stride_mp, padding='valid', name = 'GAP3') 
+    conv3     = tf.layers.max_pooling1d(conv3, pool_size = conv3.get_shape()[1].value, strides=stride_mp, padding='valid', name = 'GAP3')
     conv3     = tf.layers.flatten(conv3, name = 'flat_layer3')
-    
+
     gap_pool_size   = main_branch.get_shape()[1].value
     main_branch     = tf.layers.max_pooling1d(main_branch, pool_size = gap_pool_size, strides=1, padding='valid', name = 'GAP')
     main_branch     = tf.layers.flatten(main_branch, name = 'flat_layer') ## final conv block output
@@ -78,27 +78,27 @@ def self_supervised_model(input_tensor, isTraining, drop_rate, hidden_nodes = 12
     task_1      = dense_block(input_tensor = main_branch, hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_1_dense_1')
     task_1      = dense_block(input_tensor = task_1,      hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_1_dense_2')
     task_1      = tf.layers.dense(inputs=task_1, units=1, name='task_1', reuse=reuse)
-    
+
     task_2      = dense_block(input_tensor = main_branch, hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_2_dense_1')
     task_2      = dense_block(input_tensor = task_2,      hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_2_dense_2')
-    task_2      = tf.layers.dense(inputs=task_2, units=1, name='task_2', reuse=reuse)
+    task_2      = tf.compat.v1.layers.dense(inputs=task_2, units=1, name='task_2', reuse=reuse)
 
     task_3      = dense_block(input_tensor = main_branch, hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_3_dense_1')
     task_3      = dense_block(input_tensor = task_3,      hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_3_dense_2')
-    task_3      = tf.layers.dense(inputs=task_3, units=1, name='task_3', reuse=reuse)
+    task_3      = tf.compat.v1.layers.dense(inputs=task_3, units=1, name='task_3', reuse=reuse)
 
     task_4      = dense_block(input_tensor = main_branch, hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_4_dense_1')
     task_4      = dense_block(input_tensor = task_4,      hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_4_dense_2')
-    task_4      = tf.layers.dense(inputs=task_4, units=1, name='task_4', reuse=reuse)
+    task_4      = tf.compat.v1.layers.dense(inputs=task_4, units=1, name='task_4', reuse=reuse)
 
     task_5      = dense_block(input_tensor = main_branch, hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_5_dense_1')
     task_5      = dense_block(input_tensor = task_5,      hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_5_dense_2')
-    task_5      = tf.layers.dense(inputs=task_5, units=1, name='task_5', reuse=reuse)
-    
+    task_5      = tf.compat.v1.layers.dense(inputs=task_5, units=1, name='task_5', reuse=reuse)
+
     task_6      = dense_block(input_tensor = main_branch, hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_6_dense_1')
     task_6      = dense_block(input_tensor = task_6,      hidden_nodes= hidden_nodes, drop_rate= drop_rate, isTraining= isTraining, name = 'task_6_dense_2')
-    task_6      = tf.layers.dense(inputs=task_6, units=1, name='task_6', reuse=reuse)
-    
+    task_6      = tf.compat.v1.layers.dense(inputs=task_6, units=1, name='task_6', reuse=reuse)
+
     return conv1, conv2, conv3, main_branch, task_0, task_1, task_2, task_3, task_4, task_5, task_6
 
 

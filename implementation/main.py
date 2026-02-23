@@ -61,7 +61,7 @@ single_batch_size = len(transform_task)
 batchsize = 128  
 actual_batch_size =  batchsize * single_batch_size
 log_step = 100
-epoch = 70  # Validation completed at epoch 70
+epoch = 100  # Validation completed at epoch 70
 initial_learning_rate = 0.001
 drop_rate = 0.6
 regularizer = 1
@@ -92,7 +92,7 @@ wesad_data              = None  # data_preprocessing.load_data(os.path.join(data
 #amigos_data             = data_preprocessing.amigos_prepare_for_10fold(amigos_data) # person, y_arousal, y_valence, y_dominance
 dreamer_data            = data_preprocessing.dreamer_prepare_for_10fold(dreamer_data) # person, y_arousal, y_valence, y_dominance
 
-total_fold = 1  # Quick validation: reduced from 10
+total_fold = 10  # Quick validation: reduced from 10
 kf = KFold(n_splits=total_fold, shuffle=True, random_state=True)
 #swell_train_index, swell_test_index     = utils.get_train_test_index(swell_data, kf)
 #wesad_train_index, wesad_test_index     = utils.get_train_test_index(wesad_data, kf)
@@ -177,7 +177,7 @@ for k in range(total_fold):
     print('Initializing all parameters.')
     tf.reset_default_graph()
     with tf.Session(graph=graph) as sess:
-        summary_writer = tf.compat.v1.summary.FileWriter(str_logs, sess.graph)
+        # summary_writer = tf.compat.v1.summary.FileWriter(str_logs, sess.graph)
     
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
@@ -219,8 +219,9 @@ for k in range(total_fold):
                 fetched = sess.run(fetches, {input_tensor: training_batch, y: training_labels, drop_out: drop_rate, isTrain: True})
                 
                 if tr_counter % log_step == 0: # 
-                    summary_writer.add_summary(fetched[-1], tr_counter)
-                    summary_writer.flush()
+                    # summary_writer.add_summary(fetched[-1], tr_counter)
+                    # summary_writer.flush()
+                    pass
 
                 tr_loss_task = utils.fetch_all_loss(fetched[0], tr_loss_task)
                 tr_output_loss += fetched[1]
@@ -236,7 +237,7 @@ for k in range(total_fold):
             ## performance matrix after each epoch
             tr_epoch_accuracy, tr_epoch_f1_score = utils.get_results_ssl(train_true_task, np.asarray(train_pred_task, int))
             tr_ssl_result = utils.write_result(tr_epoch_accuracy, tr_epoch_f1_score, epoch_counter, tr_ssl_result)
-            utils.write_summary(loss = tr_epoch_loss, total_loss = tr_output_loss, f1_score = tr_epoch_f1_score, epoch_counter = epoch_counter, isTraining = True, summary_writer = summary_writer)
+            # utils.write_summary(loss = tr_epoch_loss, total_loss = tr_output_loss, f1_score = tr_epoch_f1_score, epoch_counter = epoch_counter, isTraining = True, summary_writer = summary_writer)
             utils.write_result_csv(k, epoch_counter, os.path.join(output, "STR_result", "tr_str_f1_Score.csv"), tr_epoch_f1_score)
 
             model_path = os.path.join(model_dir , "epoch_" + str(epoch_counter))
@@ -280,7 +281,7 @@ for k in range(total_fold):
             ## performance matrix after each epoch
             te_epoch_accuracy, te_epoch_f1_score = utils.get_results_ssl(test_true_task, test_pred_task)            
             te_ssl_result = utils.write_result(te_epoch_accuracy, te_epoch_f1_score, epoch_counter, te_ssl_result)    
-            utils.write_summary(loss = te_epoch_loss, total_loss = te_output_loss, f1_score = te_epoch_f1_score, epoch_counter = epoch_counter, isTraining = False, summary_writer = summary_writer)
+            # utils.write_summary(loss = te_epoch_loss, total_loss = te_output_loss, f1_score = te_epoch_f1_score, epoch_counter = epoch_counter, isTraining = False, summary_writer = summary_writer)
             utils.write_result_csv(k, epoch_counter, os.path.join(output, "STR_result", "te_str_f1_score.csv"), te_epoch_f1_score)
             
     
