@@ -113,7 +113,7 @@ def supervised_model_swell(x_tr_feature,
                                   result,
                                   summaries,
                                   current_time,
-                                  epoch_super=200, 
+                                  epoch_super=50,
                                   batch_super=128,
                                   lr_super=0.001,
                                   hidden_nodes=512,
@@ -125,7 +125,7 @@ def supervised_model_swell(x_tr_feature,
     output_dimension    = y_tr.shape[1]
     log_dir = os.path.join(summaries, 'ER')
     result  = os.path.join(result, 'ER')
-    tb      = keras.callbacks.TensorBoard(log_dir= log_dir)
+    # tb      = keras.callbacks.TensorBoard(log_dir= log_dir)
     
     model = keras.models.Sequential()
     model.add(keras.layers.Dense(hidden_nodes, input_dim=input_dimension, activation='relu', kernel_regularizer = keras.regularizers.l2(L2)))
@@ -141,7 +141,7 @@ def supervised_model_swell(x_tr_feature,
         op = keras.optimizers.Adam(lr=lr_super)
         model.compile(loss='categorical_crossentropy', optimizer=op, metrics=['accuracy'])
 
-    model.fit(x_tr_feature, y_tr, epochs=epoch_super, batch_size=batch_super, callbacks=[tb], verbose=0, validation_data = (x_te_feature, y_te), shuffle = True) 
+    model.fit(x_tr_feature, y_tr, epochs=epoch_super, batch_size=batch_super, callbacks=[], verbose=0, validation_data = (x_te_feature, y_te), shuffle = True) 
     y_tr_pred = model.predict(x_tr_feature, batch_size=batch_super)
     y_te_pred = model.predict(x_te_feature, batch_size=batch_super)
     
@@ -166,7 +166,7 @@ def supervised_model_wesad(x_tr_feature,
                                   result,
                                   summaries,
                                   current_time,
-                                  epoch_super=200, 
+                                  epoch_super=50, 
                                   batch_super=128,
                                   lr_super=0.001,
                                   hidden_nodes=512,
@@ -178,7 +178,7 @@ def supervised_model_wesad(x_tr_feature,
     output_dimension    = y_tr.shape[1]
     log_dir = os.path.join(summaries, 'ER')
     result  = os.path.join(result, 'ER')
-    tb      = keras.callbacks.TensorBoard(log_dir= log_dir)
+    # tb      = keras.callbacks.TensorBoard(log_dir= log_dir)
     
     model = keras.models.Sequential()
     model.add(keras.layers.Dense(hidden_nodes, input_dim=input_dimension, activation='relu', kernel_regularizer = keras.regularizers.l2(L2)))
@@ -195,7 +195,7 @@ def supervised_model_wesad(x_tr_feature,
         op = keras.optimizers.Adam(lr=lr_super)
         model.compile(loss='categorical_crossentropy', optimizer=op, metrics=['accuracy'])
 
-    model.fit(x_tr_feature, y_tr, epochs=epoch_super, batch_size=batch_super, callbacks=[tb], verbose=0, validation_data = (x_te_feature, y_te), shuffle = True) 
+    model.fit(x_tr_feature, y_tr, epochs=epoch_super, batch_size=batch_super, callbacks=[], verbose=0, validation_data = (x_te_feature, y_te), shuffle = True) 
     y_tr_pred = model.predict(x_tr_feature, batch_size=batch_super)
     y_te_pred = model.predict(x_te_feature, batch_size=batch_super)
     
@@ -222,7 +222,7 @@ def supervised_model_dreamer(x_tr_feature,
                                   result,
                                   summaries,
                                   current_time,
-                                  epoch_super=200, 
+                                  epoch_super=50, 
                                   batch_super=128,
                                   lr_super=0.001,
                                   hidden_nodes=512,
@@ -234,7 +234,7 @@ def supervised_model_dreamer(x_tr_feature,
     output_dimension    = y_tr.shape[1]
     log_dir = os.path.join(summaries, 'ER')
     result  = os.path.join(result, 'ER')
-    tb      = keras.callbacks.TensorBoard(log_dir= log_dir)
+    # tb      = keras.callbacks.TensorBoard(log_dir= log_dir)
     
     model = keras.models.Sequential()
     model.add(keras.layers.Dense(hidden_nodes, input_dim=input_dimension, activation='relu', kernel_regularizer = keras.regularizers.l2(L2)))
@@ -255,7 +255,7 @@ def supervised_model_dreamer(x_tr_feature,
         op = keras.optimizers.Adam(lr=lr_super)
         model.compile(loss='categorical_crossentropy', optimizer=op, metrics=['accuracy'])
 
-    model.fit(x_tr_feature, y_tr, epochs=epoch_super, batch_size=batch_super, callbacks=[tb], verbose=0, validation_data = (x_te_feature, y_te), shuffle = True) 
+    model.fit(x_tr_feature, y_tr, epochs=epoch_super, batch_size=batch_super, callbacks=[], verbose=0, validation_data = (x_te_feature, y_te), shuffle = True) 
     y_tr_pred = model.predict(x_tr_feature, batch_size=batch_super)
     y_te_pred = model.predict(x_te_feature, batch_size=batch_super)
     
@@ -266,7 +266,7 @@ def supervised_model_dreamer(x_tr_feature,
     y_te_pred = np.argmax(y_te_pred, axis = 1)
     
     utils.model_result_store(y_tr, y_tr_pred, os.path.join(result, str("tr_" + identifier + ".csv")), kfold)
-    utils.model_result_store(y_te, y_te_pred, os.path.join(result, str("tr_" + identifier + ".csv")), kfold)
+    utils.model_result_store(y_te, y_te_pred, os.path.join(result, str("te_" + identifier + ".csv")), kfold)
 
    
     return 
@@ -280,7 +280,7 @@ def supervised_model_amigos(x_tr_feature,
                                   result,
                                   summaries,
                                   current_time,
-                                  epoch_super=200, 
+                                  epoch_super=50, 
                                   batch_super=128,
                                   lr_super=0.001,
                                   hidden_nodes=512,
@@ -292,7 +292,7 @@ def supervised_model_amigos(x_tr_feature,
     output_dimension    = y_tr.shape[1]
     log_dir = os.path.join(summaries, 'ER')
     result  = os.path.join(result, 'ER')
-    tb      = keras.callbacks.TensorBoard(log_dir= log_dir)
+    # tb      = keras.callbacks.TensorBoard(log_dir= log_dir)
     
     model = keras.models.Sequential()
     model.add(keras.layers.Dense(hidden_nodes, input_dim=input_dimension, activation='relu', kernel_regularizer = keras.regularizers.l2(L2)))
@@ -314,7 +314,7 @@ def supervised_model_amigos(x_tr_feature,
         op = keras.optimizers.Adam(lr=lr_super)
         model.compile(loss='categorical_crossentropy', optimizer=op, metrics=['accuracy'])
         
-    model.fit(x_tr_feature, y_tr, epochs=epoch_super, batch_size=batch_super, verbose=0, callbacks=[tb], validation_data = (x_te_feature, y_te), shuffle = True) 
+    model.fit(x_tr_feature, y_tr, epochs=epoch_super, batch_size=batch_super, verbose=0, callbacks=[], validation_data = (x_te_feature, y_te), shuffle = True) 
    
     y_tr_pred = model.predict(x_tr_feature, batch_size=batch_super)
     y_te_pred = model.predict(x_te_feature, batch_size=batch_super)
@@ -326,6 +326,6 @@ def supervised_model_amigos(x_tr_feature,
     y_te_pred = np.argmax(y_te_pred, axis = 1)
 
     utils.model_result_store(y_tr, y_tr_pred, os.path.join(result, str("tr_" + identifier + ".csv")), kfold)
-    utils.model_result_store(y_te, y_te_pred, os.path.join(result, str("tr_" + identifier + ".csv")), kfold)
+    utils.model_result_store(y_te, y_te_pred, os.path.join(result, str("te_" + identifier + ".csv")), kfold)
 
     return 

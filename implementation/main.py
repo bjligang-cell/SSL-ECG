@@ -93,7 +93,7 @@ wesad_data              = None  # data_preprocessing.load_data(os.path.join(data
 dreamer_data            = data_preprocessing.dreamer_prepare_for_10fold(dreamer_data) # person, y_arousal, y_valence, y_dominance
 
 total_fold = 10  # Quick validation: reduced from 10
-kf = KFold(n_splits=total_fold, shuffle=True, random_state=True)
+kf = KFold(n_splits=total_fold, shuffle=True, random_state=42)
 #swell_train_index, swell_test_index     = utils.get_train_test_index(swell_data, kf)
 #wesad_train_index, wesad_test_index     = utils.get_train_test_index(wesad_data, kf)
 #amigos_train_index, amigos_test_index   = utils.get_train_test_index(amigos_data, kf)
@@ -240,10 +240,11 @@ for k in range(total_fold):
             # utils.write_summary(loss = tr_epoch_loss, total_loss = tr_output_loss, f1_score = tr_epoch_f1_score, epoch_counter = epoch_counter, isTraining = True, summary_writer = summary_writer)
             utils.write_result_csv(k, epoch_counter, os.path.join(output, "STR_result", "tr_str_f1_Score.csv"), tr_epoch_f1_score)
 
-            model_path = os.path.join(model_dir , "epoch_" + str(epoch_counter))
-            utils.makedirs(model_path)
-            save_path = saver.save(sess, os.path.join(model_path, "SSL_model.ckpt"))
-            print("Self-supervised trained model is saved in path: %s" % save_path) 
+            if epoch_counter == epoch - 1:  # only save at last epoch to avoid TF1 graph accumulation slowdown
+                model_path = os.path.join(model_dir , "epoch_" + str(epoch_counter))
+                utils.makedirs(model_path)
+                save_path = saver.save(sess, os.path.join(model_path, "SSL_model.ckpt"))
+                print("Self-supervised trained model is saved in path: %s" % save_path) 
             
             ## initialize array
             te_loss_task    = np.zeros((len(transform_task), 1), dtype  = np.float32)
