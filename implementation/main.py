@@ -6,6 +6,7 @@ Created on Thu Aug  8 23:57:24 2019
 """
 
 import os
+import argparse  # Added for args
 import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
@@ -13,6 +14,12 @@ from sklearn.model_selection import KFold
 from sklearn.utils import shuffle
 import sys
 from pathlib import Path
+
+# Parse arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--fold_start', type=int, default=0)
+parser.add_argument('--fold_end', type=int, default=10)
+args, _ = parser.parse_known_args()
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
@@ -149,7 +156,9 @@ with graph.as_default():
 print('graph creation finished')
 
 """ Training """
-for k in range(total_fold):
+# Only run the specified range of folds
+print(f"Running folds from {args.fold_start} to {args.fold_end-1}")
+for k in range(args.fold_start, args.fold_end):
     
     flag                    = k
     ## save STR results
