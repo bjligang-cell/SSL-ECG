@@ -172,8 +172,8 @@ for k in range(args.fold_start, args.fold_end):
     utils.makedirs(str_logs)
     
     ## Use only DREAMER data (other datasets are commented out)
-    train_ECG   = dreamer_data[dreamer_train_index[k], 4:]
-    test_ECG    = dreamer_data[dreamer_test_index[k], 4:]
+    train_ECG   = dreamer_data[dreamer_train_index[k], 3:]
+    test_ECG    = dreamer_data[dreamer_test_index[k], 3:]
     train_ECG   = shuffle(train_ECG)
     
     ## fetch emotion recognition labels (only for DREAMER)
@@ -344,8 +344,8 @@ for k in range(args.fold_start, args.fold_end):
                 """  dreamer """  
                 if hasattr(dreamer_data, 'size') and dreamer_data.size:
                     ## training - testing ECG
-                    x_tr = dreamer_data[dreamer_train_index[k], 4:]
-                    x_te = dreamer_data[dreamer_test_index[k], 4:]
+                    x_tr = dreamer_data[dreamer_train_index[k], 3:]
+                    x_te = dreamer_data[dreamer_test_index[k], 3:]
 
                     ## features extracted from conv layers
                     x_tr_feature = utils.extract_feature(x_original = x_tr, featureset_size = featureset_size, batch_super = batchsize, input_tensor = input_tensor, isTrain = isTrain, drop_out = drop_out, extract_layer = main_branch, sess = sess)
